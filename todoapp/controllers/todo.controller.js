@@ -1,10 +1,11 @@
-const mongoose = require("mongoose");
-const { Todo } = require("../models/todo");
+const { TodoMongo } = require("../repository/mongo/todo");
 const {
   createTodoSchema,
   updateTodoSchema,
 } = require("../utils/validators/todo");
 const filterJOIValidation = require("../utils/validators/filterJOI");
+const { TodoService } = require("../services/todo");
+const todoService = new TodoService(TodoMongo);
 
 async function createTodo(req, res) {
   try {
@@ -16,15 +17,17 @@ async function createTodo(req, res) {
         payload: null,
       });
     }
+    const id = req.userId;
     const { description, title } = req.body;
-    console.log(req.userId);
-    const oid = mongoose.Types.ObjectId(req.userId);
-    const newTodo = new Todo({ description, title, userId: oid });
-    const result = await newTodo.save();
-    return res.status(201).json({
-      success: true,
-      message: "Todo successfully created",
-      payload: result,
+    const result = await todoService.createTodo({
+      description,
+      title,
+      userId: id,
+    });
+    return res.status(result.status).json({
+      success: result.success,
+      message: result.message,
+      payload: result.payload,
     });
   } catch (error) {
     return res
@@ -35,7 +38,7 @@ async function createTodo(req, res) {
 
 async function getTodos(req, res) {
   try {
-    const result = await Todo.find({});
+    const result = await todoService.getAllTodos({});
     return res.status(200).json({
       success: true,
       message: "Todo successfully found",
@@ -51,19 +54,12 @@ async function getTodos(req, res) {
 async function getTodoById(req, res) {
   try {
     const { id } = req.params;
-    const { body } = req;
-    const oid = mongoose.Types.ObjectId(id);
-    const result = await Todo.find({ _id: oid });
-    if (!result.length)
-      return res.status(404).json({
-        success: false,
-        message: "Todo not found",
-        payload: result,
-      });
-    return res.status(200).json({
-      success: true,
-      message: "Todo successfully found",
-      payload: result,
+    const result = await todoService.getTodoById({ id });
+
+    return res.status(result.status).json({
+      success: result.success,
+      message: result.message,
+      payload: result.payload,
     });
   } catch (error) {
     return res
@@ -84,12 +80,11 @@ async function updateTodoById(req, res) {
         payload: null,
       });
     }
-    const oid = mongoose.Types.ObjectId(id);
-    const result = await Todo.updateOne({ _id: oid }, { ...body });
-    return res.status(200).json({
-      success: true,
-      message: "Todo successfully updated",
-      payload: result,
+    const result = await todoService.updateTodoById({ id }, { body });
+    return res.status(result.status).json({
+      success: result.success,
+      message: result.message,
+      payload: result.payload,
     });
   } catch (error) {
     return res
@@ -101,12 +96,11 @@ async function updateTodoById(req, res) {
 async function deleteTodoById(req, res) {
   try {
     const { id } = req.params;
-    const oid = mongoose.Types.ObjectId(id);
-    const result = await Todo.deleteOne({ _id: oid });
-    return res.status(200).json({
-      success: true,
-      message: "Todo successfully updated",
-      payload: result,
+    const result = await todoService.deleteTodoById({ id });
+    return res.status(result.status).json({
+      success: result.success,
+      message: result.message,
+      payload: result.payload,
     });
   } catch (error) {
     return res

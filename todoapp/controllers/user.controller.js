@@ -1,10 +1,8 @@
 const mongoose = require("mongoose");
-const { User } = require("../repository/mongo/models/user");
-const {
-  hashObject,
-  verifyHash,
-  generateToken,
-} = require("../utils/encryption");
+const { UserMongo } = require("../repository/mongo/user");
+const { UserPostgres } = require("../repository/postgresql/user");
+const { UserService } = require("../services/user");
+const userService = new UserService(UserMongo);
 const filterJOIValidation = require("../utils/validators/filterJOI");
 const {
   createUserSchema,
@@ -23,14 +21,12 @@ async function createUser(req, res) {
         payload: null,
       });
     }
-    body.password = await hashObject(body.password);
-    const newUser = new User({ ...body });
+    const result = await userService.createUser({ body });
 
-    const result = await newUser.save();
-    return res.status(201).json({
-      success: true,
-      message: "User successfully created",
-      payload: result,
+    return res.status(result.status).json({
+      success: result.success,
+      message: result.message,
+      payload: result.payload,
     });
   } catch (error) {
     return res
@@ -41,7 +37,8 @@ async function createUser(req, res) {
 
 async function loginUser(req, res) {
   try {
-    const { error } = loginSchema.validate(req.body);
+    const { body } = req;
+    const { error } = loginSchema.validate(body);
     if (error) {
       return res.status(422).json({
         success: false,
@@ -49,40 +46,11 @@ async function loginUser(req, res) {
         payload: null,
       });
     }
-    const { email, password } = req.body;
-    const user = await User.findOne({ email }).lean();
-    if (!user) {
-      return res.status(400).json({
-        success: false,
-        message: "User not found",
-        payload: null,
-      });
-    }
-    const accurateObject = user.password;
-    const validPassword = await verifyHash({
-      sentObject: password,
-      accurateObject,
-    });
-    if (!validPassword) {
-      return res.status(400).json({
-        success: false,
-        message: "Invalid email or password",
-        payload: null,
-      });
-    }
-    const tokenPayload = {
-      userId: user._id,
-      email: user.email,
-    };
-    const token = await generateToken({
-      payload: tokenPayload,
-      expirationTime: "24h",
-    });
-    user.token = token;
-    return res.status(200).json({
-      success: true,
-      message: "User found",
-      payload: user,
+    const result = await userService.loginUser({ body });
+    return res.status(result.status).json({
+      success: result.success,
+      message: result.message,
+      payload: result.payload,
     });
   } catch (error) {
     return res
@@ -93,7 +61,7 @@ async function loginUser(req, res) {
 
 async function getUsers(req, res) {
   try {
-    const result = await User.find({});
+    const result = await userService.getAllUsers();
     return res.status(200).json({
       success: true,
       message: "User successfully found",
@@ -109,18 +77,12 @@ async function getUsers(req, res) {
 async function getUserById(req, res) {
   try {
     const { id } = req.params;
-    const oid = mongoose.Types.ObjectId(id);
-    const result = await User.find({ _id: oid });
-    if (!result.length)
-      return res.status(404).json({
-        success: false,
-        message: "User not found",
-        payload: result,
-      });
-    return res.status(200).json({
-      success: true,
-      message: "User successfully found",
-      payload: result,
+    const result = await userService.getUserById({ id });
+
+    return res.status(result.status).json({
+      success: result.success,
+      message: result.message,
+      payload: result.payload,
     });
   } catch (error) {
     return res
@@ -141,12 +103,12 @@ async function updateUserById(req, res) {
         payload: null,
       });
     }
-    const oid = mongoose.Types.ObjectId(id);
-    const result = await User.updateOne({ _id: oid }, { ...body });
-    return res.status(200).json({
-      success: true,
-      message: "User successfully updated",
-      payload: result,
+    const result = await userService.updateUserById({ id }, { body });
+
+    return res.status(result.status).json({
+      success: result.success,
+      message: result.message,
+      payload: result.payload,
     });
   } catch (error) {
     return res
@@ -158,12 +120,12 @@ async function updateUserById(req, res) {
 async function deleteUserById(req, res) {
   try {
     const { id } = req.params;
-    const oid = mongoose.Types.ObjectId(id);
-    const result = await User.deleteOne({ _id: oid });
-    return res.status(200).json({
-      success: true,
-      message: "User successfully deleted",
-      payload: result,
+    const result = await userService.deleteUserById({ id });
+
+    return res.status(result.status).json({
+      success: result.success,
+      message: result.message,
+      payload: result.payload,
     });
   } catch (error) {
     return res
