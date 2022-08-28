@@ -5,6 +5,7 @@ const {
 } = require("../utils/validators/todo");
 const filterJOIValidation = require("../utils/validators/filterJOI");
 const { TodoService } = require("../services/todo");
+const { TodoPostgres } = require("../repository/postgresql/todo");
 const todoService = new TodoService(TodoMongo);
 
 async function createTodo(req, res) {
@@ -38,7 +39,7 @@ async function createTodo(req, res) {
 
 async function getTodos(req, res) {
   try {
-    const result = await todoService.getAllTodos({});
+    const result = await todoService.getAllTodos();
     return res.status(200).json({
       success: true,
       message: "Todo successfully found",

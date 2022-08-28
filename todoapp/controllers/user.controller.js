@@ -1,8 +1,9 @@
 const mongoose = require("mongoose");
 const { UserMongo } = require("../repository/mongo/user");
 const { UserPostgres } = require("../repository/postgresql/user");
+const { UserMock } = require("../repository/mocks/user.mocks");
 const { UserService } = require("../services/user");
-const userService = new UserService(UserMongo);
+const userService = new UserService(UserMock);
 const filterJOIValidation = require("../utils/validators/filterJOI");
 const {
   createUserSchema,

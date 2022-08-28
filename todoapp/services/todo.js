@@ -45,9 +45,9 @@ class TodoService {
       throw error;
     }
   }
-  async updateTodoById(id, body) {
+  async updateTodoById({ id }, { body }) {
     try {
-      const todo = await this.respository.updateTodoById(id, { body });
+      const todo = await this.respository.updateTodoById({ id }, { body });
       return {
         status: 200,
         success: true,

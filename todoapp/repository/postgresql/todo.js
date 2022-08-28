@@ -1,60 +1,63 @@
 const { Todo } = require("../../models/postgresql/");
-class UserPostgres {
-  static async createUser({ body }) {
+const { User } = require("../../models/postgresql/");
+class TodoPostgres {
+  static async createTodo({ body }) {
+    console.log(body.userId);
     try {
-      const todo = await Todo.create({ ...body });
+      const user = await User.findOne({ where: { oid: body.userId } });
+      console.log(user);
+      const todo = await Todo.create({ ...body, userId: user.id });
       return todo;
     } catch (error) {
       throw error;
     }
   }
-  static async getUserByEmail({ email }) {
+
+  static async getAllTodos() {
     try {
-      const todo = await Todo.findOne({ where: { email } });
-      return todo;
-    } catch (error) {
-      throw error;
-    }
-  }
-  static async getAllUsers() {
-    try {
-      const todos = await User.findAll({ include: ["users"] });
+      const todos = await Todo.findAll({ include: ["user"] });
       return todos;
     } catch (error) {
       throw error;
     }
   }
 
-  static async getUserById({ id }) {
+  static async getTodoById({ id }) {
     try {
-      const user = await User.findOne({ where: { oid: id } });
-      return user;
+      const todo = await Todo.findOne({
+        where: { oid: id },
+        include: ["user"],
+      });
+      return todo;
     } catch (error) {
       throw error;
     }
   }
-  static async updateUserById({ id }, { body }) {
+  static async updateTodoById({ id }, { body }) {
     try {
-      const user = await User.findOne({ where: { oid: id } });
-      body.password = await hashObject(body.password);
-      user.name = body.name;
-      user.email = body.email;
-      user.password = body.password;
-      await user.save();
-      return user;
+      const todo = await Todo.findOne({
+        where: { oid: id },
+        include: ["user"],
+      });
+
+      todo.title = body.title;
+      todo.description = body.description;
+
+      await todo.save();
+      return todo;
     } catch (error) {
       throw error;
     }
   }
-  static async deleteUserById({ id }) {
+  static async deleteTodoById({ id }) {
     try {
-      const user = await User.findOne({ where: { oid: id } });
-      await user.destroy();
-      return user;
+      const todo = await Todo.findOne({ where: { oid: id } });
+      await todo.destroy();
+      return todo;
     } catch (error) {
       throw error;
     }
   }
 }
 
-module.exports = { UserPostgres };
+module.exports = { TodoPostgres };

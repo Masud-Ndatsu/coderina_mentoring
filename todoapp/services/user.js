@@ -14,7 +14,7 @@ class UserService {
       body.password = await hashObject(body.password);
       const user = await this.respository.createUser({ body });
       return {
-        status: 200,
+        status: 201,
         success: true,
         message: "User successfully created",
         payload: user,
@@ -56,8 +56,9 @@ class UserService {
           payload: null,
         };
       }
+      console.log(user.oid);
       const tokenPayload = {
-        userId: user._id,
+        userId: user?._id || user?.oid,
         email: user.email,
       };
       const token = await generateToken({
@@ -68,7 +69,7 @@ class UserService {
       return {
         status: 200,
         success: true,
-        message: "User found",
+        message: "User Logged in",
         payload: { user, token },
       };
     } catch (error) {
